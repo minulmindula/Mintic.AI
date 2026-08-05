@@ -46,5 +46,14 @@ class Settings(BaseSettings):
         description="Enforce Alpaca paper trading mode",
     )
 
+    DATABASE_URL: str = Field(
+        default="sqlite+aiosqlite:///./mintic_audit.db",
+        description="Async database connection string for audit logging",
+    )
+    QDRANT_LOCATION: str = Field(
+        default=":memory:",
+        description="Qdrant vector store location or host",
+    )
+
 
 settings: Settings = Settings()
