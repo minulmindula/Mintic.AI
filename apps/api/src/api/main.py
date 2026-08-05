@@ -160,6 +160,7 @@ async def trigger_analysis(
 
     # Step 1: Deliberation workflow execution
     proposal: Optional[TradeProposal] = None
+    final_state: dict[str, Any] = {}
     try:
         final_state = await deliberation_workflow.ainvoke(initial_state)
         proposal = final_state.get("final_proposal")

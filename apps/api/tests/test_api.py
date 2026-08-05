@@ -69,6 +69,26 @@ def test_trigger_analysis_endpoint_returns_200(
     assert "execution_result" in data
 
 
+@patch("src.api.main.deliberation_workflow.ainvoke")
+def test_trigger_analysis_endpoint_handles_llm_exception_gracefully(
+    mock_ainvoke: AsyncMock,
+    client: TestClient,
+) -> None:
+    """Verify POST /api/v1/trigger-analysis handles workflow exceptions without 500 error."""
+    mock_ainvoke.side_effect = RuntimeError("Mock LLM error")
+
+    response = client.post(
+        "/api/v1/trigger-analysis",
+        json={"symbol": "AAPL"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "completed"
+    assert data["proposal"] is not None
+    assert "Fallback" in data["proposal"]["reasoning_summary"]
+
+
 @pytest.mark.asyncio
 async def test_database_audit_logging() -> None:
     """Verify async database audit log entry creation."""
