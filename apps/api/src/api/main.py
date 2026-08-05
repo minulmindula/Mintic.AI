@@ -68,6 +68,15 @@ class TriggerAnalysisResponse(BaseModel):
     execution_result: Optional[dict[str, Any]] = Field(
         default=None, description="Alpaca order submission output if executed"
     )
+    analyst_report: Optional[str] = Field(
+        default=None, description="Analyst node market analysis report"
+    )
+    bull_hypothesis: Optional[str] = Field(
+        default=None, description="Bull node optimistic hypothesis"
+    )
+    bear_hypothesis: Optional[str] = Field(
+        default=None, description="Bear node risk hypothesis"
+    )
 
 
 @app.post("/api/v1/trigger-analysis", response_model=TriggerAnalysisResponse)
@@ -156,6 +165,16 @@ async def trigger_analysis(
         reasoning_summary=safety_eval.reason,
     )
 
+    analyst_text = (
+        final_state.get("analyst_report") if isinstance(final_state, dict) else None
+    )
+    bull_text = (
+        final_state.get("bull_hypothesis") if isinstance(final_state, dict) else None
+    )
+    bear_text = (
+        final_state.get("bear_hypothesis") if isinstance(final_state, dict) else None
+    )
+
     return TriggerAnalysisResponse(
         status="completed",
         symbol=symbol,
@@ -167,6 +186,9 @@ async def trigger_analysis(
             "failed_checks": safety_eval.failed_checks,
         },
         execution_result=execution_output,
+        analyst_report=analyst_text,
+        bull_hypothesis=bull_text,
+        bear_hypothesis=bear_text,
     )
 
 

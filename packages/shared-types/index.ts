@@ -43,4 +43,7 @@ export interface TriggerAnalysisResponse {
     symbol?: string;
     error?: string;
   };
+  analyst_report?: string;
+  bull_hypothesis?: string;
+  bear_hypothesis?: string;
 }

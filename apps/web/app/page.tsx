@@ -1,7 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldCheck, ShieldAlert, TrendingUp, AlertTriangle, Cpu, DollarSign } from "lucide-react";
+import {
+  ShieldCheck,
+  ShieldAlert,
+  TrendingUp,
+  AlertTriangle,
+  Cpu,
+  DollarSign,
+  FileText,
+  TrendingDown,
+  BrainCircuit,
+  Activity,
+} from "lucide-react";
 
 interface AnalysisResponse {
   status: string;
@@ -27,6 +38,9 @@ interface AnalysisResponse {
     symbol?: string;
     error?: string;
   };
+  analyst_report?: string;
+  bull_hypothesis?: string;
+  bear_hypothesis?: string;
 }
 
 export default function Home() {
@@ -34,6 +48,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"proposal" | "deliberation">("proposal");
 
   const handleTrigger = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +77,9 @@ export default function Home() {
       setResult(data);
     } catch (err: any) {
       if (err.name === "TypeError" && err.message === "Failed to fetch") {
-        setError("Failed to connect to FastAPI backend at http://localhost:8000. Please make sure the server is running (`cd apps/api && uv run uvicorn src.api.main:app --port 8000`).");
+        setError(
+          "Failed to connect to FastAPI backend at http://localhost:8000. Please make sure the server is running (`cd apps/api && uv run uvicorn src.api.main:app --port 8000`)."
+        );
       } else {
         setError(err.message || "Failed to trigger trade analysis");
       }
@@ -85,13 +102,15 @@ export default function Home() {
         </div>
         <div className="mt-4 md:mt-0 flex items-center space-x-3 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-semibold text-slate-300">FastAPI & Alpaca Paper Ready</span>
+          <span className="text-xs font-semibold text-slate-300">
+            FastAPI & Alpaca Paper Ready
+          </span>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Controls & Trigger Form */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl h-fit">
           <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2 mb-4">
             <Cpu className="w-5 h-5 text-blue-400" />
             Trigger Multi-Agent Analysis
@@ -114,7 +133,9 @@ export default function Home() {
                 <option value="TSLA">TSLA - Tesla Inc.</option>
                 <option value="META">META - Meta Platforms</option>
                 <option value="SPY">SPY - S&P 500 ETF</option>
-                <option value="UNAPPROVED_TICKER">UNAPPROVED_TICKER (Test Safety Lock)</option>
+                <option value="UNAPPROVED_TICKER">
+                  UNAPPROVED_TICKER (Test Safety Lock)
+                </option>
               </select>
             </div>
 
@@ -165,7 +186,9 @@ export default function Home() {
             <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-5 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
               <div>
-                <h3 className="text-sm font-semibold text-red-300">Execution Error</h3>
+                <h3 className="text-sm font-semibold text-red-300">
+                  Execution Error
+                </h3>
                 <p className="text-xs text-red-400 mt-1">{error}</p>
               </div>
             </div>
@@ -174,9 +197,12 @@ export default function Home() {
           {!result && !loading && !error && (
             <div className="bg-slate-900/60 border border-dashed border-slate-800 rounded-xl p-12 text-center text-slate-500">
               <Cpu className="w-10 h-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm font-medium">Select a symbol and trigger trade analysis.</p>
+              <p className="text-sm font-medium">
+                Select a symbol and trigger trade analysis.
+              </p>
               <p className="text-xs text-slate-600 mt-1">
-                Deliberation graph will execute Analyst, Bull, Bear, and Risk Manager nodes.
+                Deliberation graph will execute Analyst, Bull, Bear, and Risk
+                Manager nodes.
               </p>
             </div>
           )}
@@ -200,9 +226,12 @@ export default function Home() {
                     )}
                     <div>
                       <h3 className="text-base font-bold text-slate-100">
-                        Safety Lock Status: {result.is_approved ? "APPROVED" : "REJECTED"}
+                        Safety Lock Status:{" "}
+                        {result.is_approved ? "APPROVED" : "REJECTED"}
                       </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">{result.safety_result.reason}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {result.safety_result.reason}
+                      </p>
                     </div>
                   </div>
                   <span
@@ -218,7 +247,9 @@ export default function Home() {
 
                 {result.safety_result.failed_checks.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-rose-800/40">
-                    <h4 className="text-xs font-semibold text-rose-300 mb-2">Violated Safety Rules:</h4>
+                    <h4 className="text-xs font-semibold text-rose-300 mb-2">
+                      Violated Safety Rules:
+                    </h4>
                     <ul className="list-disc list-inside space-y-1 text-xs text-rose-400">
                       {result.safety_result.failed_checks.map((chk, i) => (
                         <li key={i}>{chk}</li>
@@ -228,51 +259,140 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Trade Proposal Breakdown */}
-              {result.proposal && (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                  <h3 className="text-base font-bold text-slate-100 mb-4 flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-emerald-400" />
-                    Deliberated Trade Proposal
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                    <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                      <span className="text-xs text-slate-400 block">Action</span>
-                      <span
-                        className={`text-sm font-bold font-mono ${
-                          result.proposal.action === "BUY" ? "text-emerald-400" : "text-rose-400"
-                        }`}
-                      >
-                        {result.proposal.action}
-                      </span>
+              {/* View Switcher Tabs */}
+              <div className="flex space-x-2 border-b border-slate-800 pb-2">
+                <button
+                  onClick={() => setActiveTab("proposal")}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
+                    activeTab === "proposal"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-900 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Trade Proposal & Execution
+                </button>
+                <button
+                  onClick={() => setActiveTab("deliberation")}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
+                    activeTab === "deliberation"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-900 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <BrainCircuit className="w-4 h-4" />
+                  Multi-Agent Deliberation Reports
+                </button>
+              </div>
+
+              {/* Tab 1: Trade Proposal & Execution */}
+              {activeTab === "proposal" && result.proposal && (
+                <div className="space-y-6">
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                    <h3 className="text-base font-bold text-slate-100 mb-4 flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-emerald-400" />
+                      Deliberated Trade Proposal
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                      <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                        <span className="text-xs text-slate-400 block">
+                          Action
+                        </span>
+                        <span
+                          className={`text-sm font-bold font-mono ${
+                            result.proposal.action === "BUY"
+                              ? "text-emerald-400"
+                              : "text-rose-400"
+                          }`}
+                        >
+                          {result.proposal.action}
+                        </span>
+                      </div>
+                      <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                        <span className="text-xs text-slate-400 block">
+                          Quantity
+                        </span>
+                        <span className="text-sm font-bold font-mono text-slate-100">
+                          {result.proposal.quantity}
+                        </span>
+                      </div>
+                      <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                        <span className="text-xs text-slate-400 block">
+                          Target Price
+                        </span>
+                        <span className="text-sm font-bold font-mono text-slate-100">
+                          £{result.proposal.target_price.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                        <span className="text-xs text-slate-400 block">
+                          Confidence
+                        </span>
+                        <span className="text-sm font-bold font-mono text-blue-400">
+                          {(result.proposal.confidence_score * 100).toFixed(0)}%
+                        </span>
+                      </div>
                     </div>
-                    <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                      <span className="text-xs text-slate-400 block">Quantity</span>
-                      <span className="text-sm font-bold font-mono text-slate-100">
-                        {result.proposal.quantity}
+
+                    <div className="mt-4 pt-4 border-t border-slate-800">
+                      <span className="text-xs font-semibold text-slate-400 block mb-1">
+                        Reasoning Summary
                       </span>
-                    </div>
-                    <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                      <span className="text-xs text-slate-400 block">Target Price</span>
-                      <span className="text-sm font-bold font-mono text-slate-100">
-                        £{result.proposal.target_price.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                      <span className="text-xs text-slate-400 block">Confidence</span>
-                      <span className="text-sm font-bold font-mono text-blue-400">
-                        {(result.proposal.confidence_score * 100).toFixed(0)}%
-                      </span>
+                      <p className="text-xs text-slate-200 leading-relaxed bg-slate-950 p-4 rounded-lg border border-slate-800/80 font-mono whitespace-pre-wrap">
+                        {result.proposal.reasoning_summary}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-slate-800">
-                    <span className="text-xs font-semibold text-slate-400 block mb-1">
-                      Reasoning Summary
-                    </span>
-                    <p className="text-xs text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-lg border border-slate-800/60">
-                      {result.proposal.reasoning_summary}
-                    </p>
+                  {/* Execution Output Card */}
+                  {result.execution_result && (
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                      <h4 className="text-sm font-bold text-slate-100 mb-2 flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-emerald-400" />
+                        Alpaca Paper Broker Execution Status
+                      </h4>
+                      <pre className="text-xs text-emerald-300 bg-slate-950 p-3 rounded-lg font-mono overflow-x-auto border border-slate-800">
+                        {JSON.stringify(result.execution_result, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab 2: Multi-Agent Deliberation Reports */}
+              {activeTab === "deliberation" && (
+                <div className="space-y-6">
+                  {/* Analyst Report */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                    <h4 className="text-sm font-bold text-slate-100 mb-2 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-blue-400" />
+                      1. Financial Analyst Node Report
+                    </h4>
+                    <div className="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-lg border border-slate-800 whitespace-pre-wrap font-mono">
+                      {result.analyst_report || "No analyst report text returned."}
+                    </div>
+                  </div>
+
+                  {/* Bull Hypothesis */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                    <h4 className="text-sm font-bold text-emerald-300 mb-2 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      2. Bull Node Optimistic Hypothesis
+                    </h4>
+                    <div className="text-xs text-emerald-200/90 leading-relaxed bg-slate-950 p-4 rounded-lg border border-emerald-900/40 whitespace-pre-wrap font-mono">
+                      {result.bull_hypothesis || "No bull hypothesis text returned."}
+                    </div>
+                  </div>
+
+                  {/* Bear Hypothesis */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                    <h4 className="text-sm font-bold text-rose-300 mb-2 flex items-center gap-2">
+                      <TrendingDown className="w-4 h-4 text-rose-400" />
+                      3. Bear Node Risk Hypothesis
+                    </h4>
+                    <div className="text-xs text-rose-200/90 leading-relaxed bg-slate-950 p-4 rounded-lg border border-rose-900/40 whitespace-pre-wrap font-mono">
+                      {result.bear_hypothesis || "No bear hypothesis text returned."}
+                    </div>
                   </div>
                 </div>
               )}
