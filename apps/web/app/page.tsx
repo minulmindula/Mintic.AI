@@ -61,7 +61,11 @@ export default function Home() {
       const data: AnalysisResponse = await res.json();
       setResult(data);
     } catch (err: any) {
-      setError(err.message || "Failed to trigger trade analysis");
+      if (err.name === "TypeError" && err.message === "Failed to fetch") {
+        setError("Failed to connect to FastAPI backend at http://localhost:8000. Please make sure the server is running (`cd apps/api && uv run uvicorn src.api.main:app --port 8000`).");
+      } else {
+        setError(err.message || "Failed to trigger trade analysis");
+      }
     } finally {
       setLoading(false);
     }

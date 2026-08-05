@@ -1,5 +1,8 @@
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -53,6 +56,15 @@ class Settings(BaseSettings):
     QDRANT_LOCATION: str = Field(
         default=":memory:",
         description="Qdrant vector store location or host",
+    )
+
+    GEMINI_API_KEY: str = Field(
+        default="",
+        description="Google Gemini API Key for multi-agent deliberation",
+    )
+    GOOGLE_API_KEY: str = Field(
+        default="",
+        description="Google API Key for multi-agent deliberation",
     )
 
 

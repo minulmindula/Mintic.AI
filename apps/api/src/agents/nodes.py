@@ -3,16 +3,35 @@ from typing import Any, Optional
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
+import os
+
 from src.agents.state import DeliberationState
+from src.config import settings
 from src.core.schemas import TradeProposal
 
 
 def get_default_llm() -> ChatGoogleGenerativeAI:
-    """Helper function to instantiate ChatGoogleGenerativeAI with gemini-2.5-flash."""
-    return ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        temperature=0.2,
+    """Helper function to instantiate ChatGoogleGenerativeAI with gemini-1.5-flash."""
+    api_key = (
+        settings.GEMINI_API_KEY
+        or settings.GOOGLE_API_KEY
+        or os.getenv("GEMINI_API_KEY")
+        or os.getenv("GOOGLE_API_KEY")
+        or ""
     )
+    if api_key:
+        os.environ["GEMINI_API_KEY"] = api_key
+        os.environ["GOOGLE_API_KEY"] = api_key
+
+    kwargs: dict[str, Any] = {
+        "model": "gemini-1.5-flash",
+        "temperature": 0.2,
+    }
+    if api_key:
+        kwargs["google_api_key"] = api_key
+        kwargs["api_key"] = api_key
+
+    return ChatGoogleGenerativeAI(**kwargs)
 
 
 def analyst_node(
