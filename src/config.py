@@ -33,5 +33,18 @@ class Settings(BaseSettings):
         description="Maximum allowed daily drawdown percentage",
     )
 
+    ALPACA_API_KEY: str = Field(
+        default="PKTEST_KEY_ID",
+        description="Alpaca API Key ID for paper trading",
+    )
+    ALPACA_SECRET_KEY: str = Field(
+        default="PKTEST_SECRET_KEY",
+        description="Alpaca Secret Key for paper trading",
+    )
+    ALPACA_PAPER: bool = Field(
+        default=True,
+        description="Enforce Alpaca paper trading mode",
+    )
+
 
 settings: Settings = Settings()
