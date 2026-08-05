@@ -99,3 +99,37 @@ async def log_audit_entry(
         await session.refresh(audit_entry)
 
     return audit_entry
+
+
+async def get_audit_logs(
+    limit: int = 50,
+    symbol: Optional[str] = None,
+    is_approved: Optional[bool] = None,
+    engine: Optional[AsyncEngine] = None,
+) -> list[AuditLog]:
+    """
+    Asynchronously retrieves historical audit log entries.
+
+    Args:
+        limit: Maximum records to return.
+        symbol: Optional filter by ticker symbol.
+        is_approved: Optional filter by approval status.
+        engine: Optional AsyncEngine instance for dependency injection.
+
+    Returns:
+        List of AuditLog records.
+    """
+    from sqlalchemy import select
+
+    async_engine = engine or get_engine()
+    session_factory = get_session_maker(async_engine)
+
+    stmt = select(AuditLog).order_by(AuditLog.id.desc()).limit(limit)
+    if symbol:
+        stmt = stmt.where(AuditLog.symbol == symbol.upper())
+    if is_approved is not None:
+        stmt = stmt.where(AuditLog.is_approved == is_approved)
+
+    async with session_factory() as session:
+        result = await session.execute(stmt)
+        return list(result.scalars().all())

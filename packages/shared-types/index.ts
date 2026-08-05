@@ -47,3 +47,40 @@ export interface TriggerAnalysisResponse {
   bull_hypothesis?: string;
   bear_hypothesis?: string;
 }
+
+export interface HealthResponse {
+  status: string;
+  version: string;
+  database: string;
+}
+
+export interface SafetyRulesResponse {
+  allowed_symbols: string[];
+  max_position_size_gbp: number;
+  min_confidence_threshold: number;
+  max_daily_drawdown_percent: number;
+}
+
+export interface AuditLogEntry {
+  id: number;
+  symbol: string;
+  confidence_score: number;
+  is_approved: boolean;
+  reasoning_summary: string;
+  created_at: string;
+}
+
+export interface AccountSummaryResponse {
+  buying_power: number;
+  cash: number;
+  portfolio_value: number;
+  currency: string;
+  positions: Array<Record<string, any>>;
+}
+
+export interface MarketQuoteResponse {
+  symbol: string;
+  current_price: number;
+  ask_price: number;
+  bid_price: number;
+}

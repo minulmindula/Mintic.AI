@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -12,43 +12,76 @@ import {
   TrendingDown,
   BrainCircuit,
   Activity,
+  History,
+  Search,
+  Wallet,
 } from "lucide-react";
-
-interface AnalysisResponse {
-  status: string;
-  symbol: string;
-  is_approved: boolean;
-  proposal?: {
-    symbol: string;
-    action: string;
-    quantity: number;
-    confidence_score: number;
-    target_price: number;
-    stop_loss: number;
-    reasoning_summary: string;
-  };
-  safety_result: {
-    is_approved: boolean;
-    reason: string;
-    failed_checks: string[];
-  };
-  execution_result?: {
-    order_id?: string;
-    status?: string;
-    symbol?: string;
-    error?: string;
-  };
-  analyst_report?: string;
-  bull_hypothesis?: string;
-  bear_hypothesis?: string;
-}
+import {
+  AccountSummaryResponse,
+  AuditLogEntry,
+  MarketQuoteResponse,
+  TriggerAnalysisResponse,
+} from "../../../packages/shared-types";
 
 export default function Home() {
   const [symbol, setSymbol] = useState("AAPL");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<AnalysisResponse | null>(null);
+  const [result, setResult] = useState<TriggerAnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"proposal" | "deliberation">("proposal");
+  const [activeTab, setActiveTab] = useState<"proposal" | "deliberation" | "audit">("proposal");
+
+  // Additional API State
+  const [account, setAccount] = useState<AccountSummaryResponse | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [quoteSymbol, setQuoteSymbol] = useState("AAPL");
+  const [quote, setQuote] = useState<MarketQuoteResponse | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+
+  // Fetch Account Summary & Audit Logs on Mount
+  useEffect(() => {
+    fetchAccount();
+    fetchAuditLogs();
+  }, []);
+
+  const fetchAccount = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/account");
+      if (res.ok) {
+        const data: AccountSummaryResponse = await res.json();
+        setAccount(data);
+      }
+    } catch {
+      // Ignore initial connection errors silently
+    }
+  };
+
+  const fetchAuditLogs = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/audit-logs?limit=20");
+      if (res.ok) {
+        const data: AuditLogEntry[] = await res.json();
+        setAuditLogs(data);
+      }
+    } catch {
+      // Ignore initial connection errors silently
+    }
+  };
+
+  const handleFetchQuote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setQuoteLoading(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/market/quote/${quoteSymbol}`);
+      if (res.ok) {
+        const data: MarketQuoteResponse = await res.json();
+        setQuote(data);
+      }
+    } catch {
+      // Ignore quote errors
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
 
   const handleTrigger = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,8 +106,11 @@ export default function Home() {
         throw new Error(`Server returned HTTP ${res.status}`);
       }
 
-      const data: AnalysisResponse = await res.json();
+      const data: TriggerAnalysisResponse = await res.json();
       setResult(data);
+      // Refresh audit logs and account after triggering analysis
+      fetchAuditLogs();
+      fetchAccount();
     } catch (err: any) {
       if (err.name === "TypeError" && err.message === "Failed to fetch") {
         setError(
@@ -91,7 +127,7 @@ export default function Home() {
   return (
     <main className="min-h-screen max-w-7xl mx-auto p-6 md:p-12">
       {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 pb-6 border-b border-slate-800">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-slate-800">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">
             Mintic.AI Dashboard
@@ -108,79 +144,144 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Controls & Trigger Form */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl h-fit">
-          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2 mb-4">
-            <Cpu className="w-5 h-5 text-blue-400" />
-            Trigger Multi-Agent Analysis
-          </h2>
-          <form onSubmit={handleTrigger} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                Stock Symbol (GBP / Stock Whitelist)
-              </label>
-              <select
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-              >
-                <option value="AAPL">AAPL - Apple Inc.</option>
-                <option value="GOOGL">GOOGL - Alphabet Inc.</option>
-                <option value="MSFT">MSFT - Microsoft Corp.</option>
-                <option value="NVDA">NVDA - NVIDIA Corp.</option>
-                <option value="AMZN">AMZN - Amazon.com Inc.</option>
-                <option value="TSLA">TSLA - Tesla Inc.</option>
-                <option value="META">META - Meta Platforms</option>
-                <option value="SPY">SPY - S&P 500 ETF</option>
-                <option value="UNAPPROVED_TICKER">
-                  UNAPPROVED_TICKER (Test Safety Lock)
-                </option>
-              </select>
+      {/* Real-Time Account Summary Banner */}
+      {account && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+            <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 text-blue-400">
+              <Wallet className="w-6 h-6" />
             </div>
+            <div>
+              <span className="text-xs text-slate-400 uppercase tracking-wider block">
+                Buying Power
+              </span>
+              <span className="text-lg font-bold font-mono text-slate-100">
+                £{account.buying_power.toLocaleString("en-GB", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-3 px-4 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 flex justify-center items-center gap-2 text-sm"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Running Deliberation Graph...
-                </>
-              ) : (
-                <>
-                  <TrendingUp className="w-4 h-4" />
-                  Deliberate Trade Proposal
-                </>
-              )}
-            </button>
-          </form>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+            <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs text-slate-400 uppercase tracking-wider block">
+                Portfolio Value
+              </span>
+              <span className="text-lg font-bold font-mono text-slate-100">
+                £{account.portfolio_value.toLocaleString("en-GB", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
 
-          {/* Guidelines Summary */}
-          <div className="mt-8 pt-6 border-t border-slate-800/80 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Deterministic Safety Bounds (GBP)
-            </h3>
-            <div className="space-y-2 text-xs text-slate-400">
-              <div className="flex justify-between py-1 border-b border-slate-800/40">
-                <span>Max Position Size:</span>
-                <span className="font-mono text-slate-200">£10,000.00</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800/40">
-                <span>Min Confidence Score:</span>
-                <span className="font-mono text-slate-200">0.70 (70%)</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span>Max Daily Drawdown:</span>
-                <span className="font-mono text-slate-200">5.0%</span>
-              </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+            <div className="p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20 text-indigo-400">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs text-slate-400 uppercase tracking-wider block">
+                Open Positions
+              </span>
+              <span className="text-lg font-bold font-mono text-slate-100">
+                {account.positions.length} Positions
+              </span>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Deliberation Results */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Controls & Trigger Form */}
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+            <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2 mb-4">
+              <Cpu className="w-5 h-5 text-blue-400" />
+              Trigger Multi-Agent Analysis
+            </h2>
+            <form onSubmit={handleTrigger} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                  Stock Symbol (GBP Whitelist)
+                </label>
+                <select
+                  value={symbol}
+                  onChange={(e) => setSymbol(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                >
+                  <option value="AAPL">AAPL - Apple Inc.</option>
+                  <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+                  <option value="MSFT">MSFT - Microsoft Corp.</option>
+                  <option value="NVDA">NVDA - NVIDIA Corp.</option>
+                  <option value="AMZN">AMZN - Amazon.com Inc.</option>
+                  <option value="TSLA">TSLA - Tesla Inc.</option>
+                  <option value="META">META - Meta Platforms</option>
+                  <option value="SPY">SPY - S&P 500 ETF</option>
+                  <option value="UNAPPROVED_TICKER">
+                    UNAPPROVED_TICKER (Test Safety Lock)
+                  </option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-3 px-4 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 flex justify-center items-center gap-2 text-sm"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Running Deliberation Graph...
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp className="w-4 h-4" />
+                    Deliberate Trade Proposal
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Ticker Quote Lookup Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2 mb-3">
+              <Search className="w-4 h-4 text-emerald-400" />
+              Live Quote Lookup (`GET /market/quote`)
+            </h3>
+            <form onSubmit={handleFetchQuote} className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={quoteSymbol}
+                onChange={(e) => setQuoteSymbol(e.target.value.toUpperCase())}
+                placeholder="Ticker (e.g. NVDA)"
+                className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+              <button
+                type="submit"
+                disabled={quoteLoading}
+                className="bg-slate-800 hover:bg-slate-700 text-xs font-semibold px-3 py-2 rounded-lg text-slate-200"
+              >
+                Quote
+              </button>
+            </form>
+
+            {quote && (
+              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1 font-mono">
+                <div className="flex justify-between text-slate-300">
+                  <span>Price:</span>
+                  <span className="text-emerald-400 font-bold">£{quote.current_price.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Ask / Bid:</span>
+                  <span>£{quote.ask_price.toFixed(2)} / £{quote.bid_price.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-6">
           {error && (
             <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-5 flex items-start gap-3">
@@ -281,7 +382,18 @@ export default function Home() {
                   }`}
                 >
                   <BrainCircuit className="w-4 h-4" />
-                  Multi-Agent Deliberation Reports
+                  Deliberation Reports
+                </button>
+                <button
+                  onClick={() => setActiveTab("audit")}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
+                    activeTab === "audit"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-900 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <History className="w-4 h-4" />
+                  Database Audit Trail (`/audit-logs`)
                 </button>
               </div>
 
@@ -393,6 +505,54 @@ export default function Home() {
                     <div className="text-xs text-rose-200/90 leading-relaxed bg-slate-950 p-4 rounded-lg border border-rose-900/40 whitespace-pre-wrap font-mono">
                       {result.bear_hypothesis || "No bear hypothesis text returned."}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Historical Audit Trail Table */}
+              {activeTab === "audit" && (
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                  <h4 className="text-sm font-bold text-slate-100 mb-4 flex items-center gap-2">
+                    <History className="w-4 h-4 text-blue-400" />
+                    Database Audit Log History (`GET /api/v1/audit-logs`)
+                  </h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
+                        <tr>
+                          <th className="p-3">ID</th>
+                          <th className="p-3">Symbol</th>
+                          <th className="p-3">Approved</th>
+                          <th className="p-3">Confidence</th>
+                          <th className="p-3">Reasoning</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800 text-slate-300">
+                        {auditLogs.map((log) => (
+                          <tr key={log.id} className="hover:bg-slate-950/50">
+                            <td className="p-3 text-slate-500">#{log.id}</td>
+                            <td className="p-3 font-bold text-slate-100">{log.symbol}</td>
+                            <td className="p-3">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  log.is_approved
+                                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                    : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                                }`}
+                              >
+                                {log.is_approved ? "APPROVED" : "REJECTED"}
+                              </span>
+                            </td>
+                            <td className="p-3 text-blue-400">
+                              {(log.confidence_score * 100).toFixed(0)}%
+                            </td>
+                            <td className="p-3 text-slate-400 max-w-xs truncate">
+                              {log.reasoning_summary}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}

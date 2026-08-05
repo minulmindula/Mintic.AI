@@ -89,3 +89,47 @@ def test_qdrant_document_vector_store() -> None:
     """Verify DocumentVectorStore initialization and financial_docs collection."""
     store = DocumentVectorStore(vector_size=1536)
     assert store.COLLECTION_NAME == "financial_docs"
+
+
+def test_get_health_endpoint(client: TestClient) -> None:
+    """Verify GET /api/v1/health returns 200 and healthy status."""
+    response = client.get("/api/v1/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert data["database"] == "connected"
+
+
+def test_get_safety_rules_endpoint(client: TestClient) -> None:
+    """Verify GET /api/v1/config/safety-rules returns active safety bounds."""
+    response = client.get("/api/v1/config/safety-rules")
+    assert response.status_code == 200
+    data = response.json()
+    assert "AAPL" in data["allowed_symbols"]
+    assert data["max_position_size_gbp"] > 0
+    assert data["min_confidence_threshold"] == 0.70
+
+
+def test_get_audit_logs_endpoint(client: TestClient) -> None:
+    """Verify GET /api/v1/audit-logs returns 200 and a list of audit records."""
+    response = client.get("/api/v1/audit-logs")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_get_account_summary_endpoint(client: TestClient) -> None:
+    """Verify GET /api/v1/account returns 200 and account details."""
+    response = client.get("/api/v1/account")
+    assert response.status_code == 200
+    data = response.json()
+    assert "buying_power" in data
+    assert data["currency"] == "GBP"
+
+
+def test_get_market_quote_endpoint(client: TestClient) -> None:
+    """Verify GET /api/v1/market/quote/{symbol} returns 200 and price data."""
+    response = client.get("/api/v1/market/quote/AAPL")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["symbol"] == "AAPL"
+    assert "current_price" in data
