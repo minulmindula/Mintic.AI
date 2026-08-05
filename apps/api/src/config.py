@@ -15,8 +15,14 @@ class Settings(BaseSettings):
     )
 
     ALLOWED_SYMBOLS: set[str] = Field(
-        default={"AAPL", "GOOGL", "MSFT", "NVDA", "AMZN", "TSLA", "META", "SPY"},
-        description="Allowed whitelist of tradeable stock market symbols",
+        default={
+            "AAPL", "GOOGL", "MSFT", "NVDA", "AMZN", "TSLA", "META", "SPY",
+            "AMD", "NFLX", "INTC", "BABA", "COIN", "PLTR",
+            "BTC/USD", "ETH/USD", "SOL/USD", "DOGE/USD", "ADA/USD",
+            "XRP/USD", "AVAX/USD", "DOT/USD", "LINK/USD", "MATIC/USD",
+            "BTCUSD", "ETHUSD", "SOLUSD", "DOGEUSD", "XRPUSD",
+        },
+        description="Allowed whitelist of tradeable stocks and cryptocurrencies",
     )
     MAX_POSITION_SIZE_GBP: float = Field(
         default=10000.0,

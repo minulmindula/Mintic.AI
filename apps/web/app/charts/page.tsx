@@ -122,14 +122,34 @@ export default function ChartsPage() {
             onChange={(e) => setSymbol(e.target.value)}
             className="bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm w-full md:w-64"
           >
-            <option value="AAPL">AAPL - Apple Inc.</option>
-            <option value="GOOGL">GOOGL - Alphabet Inc.</option>
-            <option value="MSFT">MSFT - Microsoft Corp.</option>
-            <option value="NVDA">NVDA - NVIDIA Corp.</option>
-            <option value="AMZN">AMZN - Amazon.com Inc.</option>
-            <option value="TSLA">TSLA - Tesla Inc.</option>
-            <option value="META">META - Meta Platforms</option>
-            <option value="SPY">SPY - S&P 500 ETF</option>
+            <optgroup label="📈 Major Stocks">
+              <option value="AAPL">AAPL - Apple Inc.</option>
+              <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+              <option value="MSFT">MSFT - Microsoft Corp.</option>
+              <option value="NVDA">NVDA - NVIDIA Corp.</option>
+              <option value="AMZN">AMZN - Amazon.com Inc.</option>
+              <option value="TSLA">TSLA - Tesla Inc.</option>
+              <option value="META">META - Meta Platforms</option>
+              <option value="SPY">SPY - S&P 500 ETF</option>
+              <option value="AMD">AMD - Advanced Micro Devices</option>
+              <option value="NFLX">NFLX - Netflix Inc.</option>
+              <option value="INTC">INTC - Intel Corp.</option>
+              <option value="BABA">BABA - Alibaba Group</option>
+              <option value="COIN">COIN - Coinbase Global</option>
+              <option value="PLTR">PLTR - Palantir Tech</option>
+            </optgroup>
+            <optgroup label="🪙 Top Cryptocurrencies">
+              <option value="BTC/USD">BTC/USD - Bitcoin</option>
+              <option value="ETH/USD">ETH/USD - Ethereum</option>
+              <option value="SOL/USD">SOL/USD - Solana</option>
+              <option value="DOGE/USD">DOGE/USD - Dogecoin</option>
+              <option value="ADA/USD">ADA/USD - Cardano</option>
+              <option value="XRP/USD">XRP/USD - Ripple</option>
+              <option value="AVAX/USD">AVAX/USD - Avalanche</option>
+              <option value="DOT/USD">DOT/USD - Polkadot</option>
+              <option value="LINK/USD">LINK/USD - Chainlink</option>
+              <option value="MATIC/USD">MATIC/USD - Polygon</option>
+            </optgroup>
           </select>
         </div>
 

@@ -13,25 +13,35 @@ from src.core.schemas import TradeProposal
 def get_default_llm() -> ChatGoogleGenerativeAI:
     """Helper function to instantiate ChatGoogleGenerativeAI with gemini-1.5-flash."""
     api_key = (
-        settings.GEMINI_API_KEY
-        or settings.GOOGLE_API_KEY
-        or os.getenv("GEMINI_API_KEY")
+        os.getenv("GEMINI_API_KEY")
         or os.getenv("GOOGLE_API_KEY")
+        or settings.GEMINI_API_KEY
+        or settings.GOOGLE_API_KEY
         or ""
+    ).strip()
+
+    if not api_key:
+        for env_path in ["/app/.env", ".env", "apps/api/.env"]:
+            if os.path.exists(env_path):
+                from dotenv import dotenv_values
+                vals = dotenv_values(env_path)
+                api_key = (vals.get("GEMINI_API_KEY") or vals.get("GOOGLE_API_KEY") or "").strip()
+                if api_key:
+                    break
+
+    if not api_key:
+        raise ValueError("API key required for Gemini Developer API. Please set GEMINI_API_KEY in environment.")
+
+    os.environ["GEMINI_API_KEY"] = api_key
+    os.environ["GOOGLE_API_KEY"] = api_key
+
+    return ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",
+        temperature=0.2,
+        google_api_key=api_key,
+        api_key=api_key,
+        max_retries=2,
     )
-    if api_key:
-        os.environ["GEMINI_API_KEY"] = api_key
-        os.environ["GOOGLE_API_KEY"] = api_key
-
-    kwargs: dict[str, Any] = {
-        "model": "gemini-1.5-flash",
-        "temperature": 0.2,
-    }
-    if api_key:
-        kwargs["google_api_key"] = api_key
-        kwargs["api_key"] = api_key
-
-    return ChatGoogleGenerativeAI(**kwargs)
 
 
 def analyst_node(
