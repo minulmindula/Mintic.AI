@@ -1,0 +1,13 @@
+{
+  "name": "@mintic-ai/shared-types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript interfaces for Mintic.AI generated from Pydantic schemas",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "mintic-ai",
+  "license": "MIT"
+}
