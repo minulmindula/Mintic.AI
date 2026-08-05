@@ -1,0 +1,13 @@
+{
+  "name": "mintic-ai-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "web:dev": "npm --prefix apps/web run dev",
+    "web:build": "npm --prefix apps/web run build",
+    "api:test": "cd apps/api && uv run pytest"
+  }
+}
