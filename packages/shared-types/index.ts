@@ -84,3 +84,19 @@ export interface MarketQuoteResponse {
   ask_price: number;
   bid_price: number;
 }
+
+export interface CandlePoint {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export interface MarketHistoryResponse {
+  symbol: string;
+  days: number;
+  currency: string;
+  candles: CandlePoint[];
+}

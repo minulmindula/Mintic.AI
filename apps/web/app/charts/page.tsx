@@ -1,0 +1,315 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  ArrowLeft,
+  Calendar,
+  BarChart2,
+  DollarSign,
+  Maximize2,
+} from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from "recharts";
+import { MarketHistoryResponse } from "../../../../packages/shared-types";
+
+export default function ChartsPage() {
+  const [symbol, setSymbol] = useState("AAPL");
+  const [days, setDays] = useState(30);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<MarketHistoryResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchMarketHistory(symbol, days);
+  }, [symbol, days]);
+
+  const fetchMarketHistory = async (targetSymbol: string, targetDays: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/v1/market/history/${targetSymbol}?days=${targetDays}`
+      );
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+      const historyRes: MarketHistoryResponse = await res.json();
+      setData(historyRes);
+    } catch (err: any) {
+      setError(
+        err.message || "Failed to fetch historical market chart data from backend."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const candles = data?.candles || [];
+  const latestPrice = candles.length > 0 ? candles[candles.length - 1].close : 0;
+  const previousPrice = candles.length > 1 ? candles[0].close : latestPrice;
+  const priceChange = latestPrice - previousPrice;
+  const priceChangePercent = previousPrice > 0 ? (priceChange / previousPrice) * 100 : 0;
+
+  const highestPrice = candles.length > 0 ? Math.max(...candles.map((c) => c.high)) : 0;
+  const lowestPrice = candles.length > 0 ? Math.min(...candles.map((c) => c.low)) : 0;
+  const avgVolume =
+    candles.length > 0
+      ? Math.round(candles.reduce((acc, c) => acc + c.volume, 0) / candles.length)
+      : 0;
+
+  return (
+    <main className="min-h-screen max-w-7xl mx-auto p-6 md:p-12">
+      {/* Header */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-slate-800">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-100 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back to Dashboard
+            </Link>
+            <span className="text-xs text-slate-500">•</span>
+            <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">
+              Market Analytics
+            </span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">
+            Stock Market Charts & Analytics
+          </h1>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="mt-4 md:mt-0 flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+          <Link
+            href="/"
+            className="px-4 py-2 text-xs font-bold rounded-md text-slate-400 hover:text-slate-200 transition-colors"
+          >
+            Trading Dashboard
+          </Link>
+          <Link
+            href="/charts"
+            className="px-4 py-2 text-xs font-bold rounded-md bg-blue-600 text-white transition-colors"
+          >
+            Stock Charts
+          </Link>
+        </div>
+      </header>
+
+      {/* Controls Bar */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+        {/* Ticker Selector */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 shrink-0">
+            Select Stock:
+          </label>
+          <select
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value)}
+            className="bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm w-full md:w-64"
+          >
+            <option value="AAPL">AAPL - Apple Inc.</option>
+            <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+            <option value="MSFT">MSFT - Microsoft Corp.</option>
+            <option value="NVDA">NVDA - NVIDIA Corp.</option>
+            <option value="AMZN">AMZN - Amazon.com Inc.</option>
+            <option value="TSLA">TSLA - Tesla Inc.</option>
+            <option value="META">META - Meta Platforms</option>
+            <option value="SPY">SPY - S&P 500 ETF</option>
+          </select>
+        </div>
+
+        {/* Timeframe Buttons */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-2">
+            Timeframe:
+          </span>
+          {[7, 30, 90].map((d) => (
+            <button
+              key={d}
+              onClick={() => setDays(d)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                days === d
+                  ? "bg-blue-600 border-blue-500 text-white"
+                  : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              {d} Days
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-5 mb-8 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Financial Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+          <span className="text-xs text-slate-400 block mb-1">Current Price</span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-bold font-mono text-slate-100">
+              £{latestPrice.toFixed(2)}
+            </span>
+            <span
+              className={`inline-flex items-center text-xs font-bold font-mono px-2 py-0.5 rounded-full ${
+                priceChange >= 0
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                  : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+              }`}
+            >
+              {priceChange >= 0 ? "+" : ""}
+              {priceChangePercent.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+          <span className="text-xs text-slate-400 block mb-1">
+            Period High ({days}D)
+          </span>
+          <span className="text-2xl font-bold font-mono text-emerald-400">
+            £{highestPrice.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+          <span className="text-xs text-slate-400 block mb-1">
+            Period Low ({days}D)
+          </span>
+          <span className="text-2xl font-bold font-mono text-rose-400">
+            £{lowestPrice.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+          <span className="text-xs text-slate-400 block mb-1">Average Volume</span>
+          <span className="text-2xl font-bold font-mono text-blue-400">
+            {(avgVolume / 1000000).toFixed(2)}M
+          </span>
+        </div>
+      </div>
+
+      {/* Main Interactive Charts Container */}
+      <div className="space-y-8">
+        {/* Price Area Chart */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-400" />
+              {symbol} Price Series (£ GBP) - {days} Days History
+            </h3>
+            {loading && (
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+            )}
+          </div>
+
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={candles}>
+                <defs>
+                  <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis
+                  dataKey="timestamp"
+                  stroke="#64748b"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                />
+                <YAxis
+                  stroke="#64748b"
+                  tick={{ fontSize: 11 }}
+                  domain={["auto", "auto"]}
+                  tickFormatter={(val) => `£${val}`}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#090d16",
+                    borderColor: "#334155",
+                    borderRadius: "8px",
+                    color: "#f8fafc",
+                    fontSize: "12px",
+                    fontFamily: "monospace",
+                  }}
+                  formatter={(value: any) => [`£${Number(value).toFixed(2)}`, "Price"]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="close"
+                  stroke="#3b82f6"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#priceGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Volume Bar Chart */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+          <h3 className="text-base font-bold text-slate-100 mb-6 flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-emerald-400" />
+            Trading Volume Breakdown
+          </h3>
+          <div className="h-48 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={candles}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis
+                  dataKey="timestamp"
+                  stroke="#64748b"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                />
+                <YAxis
+                  stroke="#64748b"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(val) => `${(val / 1000000).toFixed(0)}M`}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#090d16",
+                    borderColor: "#334155",
+                    borderRadius: "8px",
+                    color: "#f8fafc",
+                    fontSize: "12px",
+                    fontFamily: "monospace",
+                  }}
+                  formatter={(value: any) => [
+                    `${(Number(value) / 1000000).toFixed(2)}M units`,
+                    "Volume",
+                  ]}
+                />
+                <Bar dataKey="volume" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

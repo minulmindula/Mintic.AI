@@ -24,6 +24,7 @@ WORKDIR /app/apps/web
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+RUN mkdir -p public
 RUN npm run build
 
 # Production Runner Stage

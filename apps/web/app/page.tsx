@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useState, useEffect } from "react";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -15,6 +16,7 @@ import {
   History,
   Search,
   Wallet,
+  LineChart,
 } from "lucide-react";
 import {
   AccountSummaryResponse,
@@ -136,11 +138,22 @@ export default function Home() {
             Autonomous Multi-Agent Trade Deliberation & Deterministic Safety Lock Engine
           </p>
         </div>
-        <div className="mt-4 md:mt-0 flex items-center space-x-3 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-semibold text-slate-300">
-            FastAPI & Alpaca Paper Ready
-          </span>
+        <div className="mt-4 md:mt-0 flex items-center space-x-3">
+          <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+            <Link
+              href="/"
+              className="px-4 py-2 text-xs font-bold rounded-md bg-blue-600 text-white transition-colors"
+            >
+              Trading Dashboard
+            </Link>
+            <Link
+              href="/charts"
+              className="px-4 py-2 text-xs font-bold rounded-md text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5"
+            >
+              <LineChart className="w-3.5 h-3.5 text-emerald-400" />
+              Stock Charts
+            </Link>
+          </div>
         </div>
       </header>
 

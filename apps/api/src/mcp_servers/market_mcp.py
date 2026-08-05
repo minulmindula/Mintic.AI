@@ -56,5 +56,63 @@ def fetch_ticker_price(symbol: str) -> dict[str, Any]:
     return fetch_ticker_price_impl(symbol=symbol)
 
 
+def fetch_market_history_impl(
+    symbol: str, days: int = 30
+) -> list[dict[str, Any]]:
+    """
+    Generates/fetches historical OHLCV price series data for a stock symbol.
+
+    Args:
+        symbol: Stock ticker symbol.
+        days: Number of days of historical candle data (default 30).
+
+    Returns:
+        List of candle dictionaries containing timestamp, open, high, low, close, volume.
+    """
+    import math
+    from datetime import datetime, timedelta, timezone
+
+    upper_symbol = symbol.upper()
+    base_price = 180.0
+    if upper_symbol == "GOOGL":
+        base_price = 175.0
+    elif upper_symbol == "MSFT":
+        base_price = 420.0
+    elif upper_symbol == "NVDA":
+        base_price = 125.0
+    elif upper_symbol == "AMZN":
+        base_price = 185.0
+    elif upper_symbol == "TSLA":
+        base_price = 210.0
+    elif upper_symbol == "META":
+        base_price = 490.0
+    elif upper_symbol == "SPY":
+        base_price = 545.0
+
+    today = datetime.now(timezone.utc)
+    history: list[dict[str, Any]] = []
+
+    for i in range(days, 0, -1):
+        dt = today - timedelta(days=i)
+        sine_wave = math.sin(i / 3.0) * (base_price * 0.04)
+        trend = (days - i) * (base_price * 0.002)
+        close_p = round(base_price + sine_wave + trend, 2)
+        open_p = round(close_p - (math.cos(i) * 1.5), 2)
+        high_p = round(max(open_p, close_p) + abs(math.sin(i) * 2.0) + 0.5, 2)
+        low_p = round(min(open_p, close_p) - abs(math.cos(i) * 1.5) - 0.5, 2)
+        volume = int(10000000 + (abs(sine_wave) * 500000))
+
+        history.append({
+            "timestamp": dt.strftime("%Y-%m-%d"),
+            "open": open_p,
+            "high": high_p,
+            "low": low_p,
+            "close": close_p,
+            "volume": volume,
+        })
+
+    return history
+
+
 if __name__ == "__main__":
     mcp.run()

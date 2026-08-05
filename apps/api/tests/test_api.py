@@ -153,3 +153,14 @@ def test_get_market_quote_endpoint(client: TestClient) -> None:
     data = response.json()
     assert data["symbol"] == "AAPL"
     assert "current_price" in data
+
+
+def test_get_market_history_endpoint(client: TestClient) -> None:
+    """Verify GET /api/v1/market/history/{symbol} returns 200 and candle series."""
+    response = client.get("/api/v1/market/history/AAPL?days=14")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["symbol"] == "AAPL"
+    assert data["days"] == 14
+    assert len(data["candles"]) == 14
+    assert "close" in data["candles"][0]

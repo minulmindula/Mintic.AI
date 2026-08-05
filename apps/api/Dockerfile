@@ -1,5 +1,5 @@
-# Multi-stage Dockerfile for Mintic.AI FastAPI Python Backend
-FROM python:3.11-slim AS builder
+# Dockerfile for Mintic.AI FastAPI Python Backend
+FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -14,21 +14,12 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Copy dependency configuration
 COPY pyproject.toml .
 
-# Create virtual environment and install dependencies
-RUN uv venv /app/.venv && \
-    . /app/.venv/bin/activate && \
-    uv pip install -r pyproject.toml
+# Install dependencies into system Python
+RUN uv pip install --system -r pyproject.toml
 
-# Production runner stage
-FROM python:3.11-slim AS runner
+# Copy application source code
+COPY . .
 
-WORKDIR /app
-
-# Copy python virtual environment and application source code
-COPY --from=builder /app/.venv /app/.venv
-COPY . /app
-
-ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
 

@@ -87,6 +87,22 @@ class MarketQuoteResponse(BaseModel):
     bid_price: float
 
 
+class CandlePoint(BaseModel):
+    timestamp: str
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: int
+
+
+class MarketHistoryResponse(BaseModel):
+    symbol: str
+    days: int
+    currency: str = "GBP"
+    candles: list[CandlePoint]
+
+
 class TriggerAnalysisRequest(BaseModel):
     """API request model for triggering trade deliberation analysis."""
 
@@ -323,6 +339,21 @@ async def get_market_quote(symbol: str) -> MarketQuoteResponse:
         current_price=float(quote.get("current_price", 180.0)),
         ask_price=float(quote.get("ask_price", 180.50)),
         bid_price=float(quote.get("bid_price", 179.50)),
+    )
+
+
+@app.get("/api/v1/market/history/{symbol}", response_model=MarketHistoryResponse)
+async def get_market_history(symbol: str, days: int = 30) -> MarketHistoryResponse:
+    """GET /api/v1/market/history/{symbol}: Fetches historical OHLCV price series data."""
+    from src.mcp_servers.market_mcp import fetch_market_history_impl
+
+    history_data = fetch_market_history_impl(symbol=symbol, days=days)
+    candles = [CandlePoint(**c) for c in history_data]
+    return MarketHistoryResponse(
+        symbol=symbol.upper(),
+        days=days,
+        currency="GBP",
+        candles=candles,
     )
 
 
