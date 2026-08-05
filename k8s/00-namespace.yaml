@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mintic-ai
+  labels:
+    name: mintic-ai
+    app.kubernetes.io/name: mintic-ai
