@@ -11,7 +11,9 @@ from src.core.schemas import TradeProposal
 
 
 def get_default_llm() -> ChatGoogleGenerativeAI:
-    """Helper function to instantiate ChatGoogleGenerativeAI with gemini-1.5-flash."""
+    """Helper function to instantiate ChatGoogleGenerativeAI with gemini-2.0-flash."""
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
     api_key = (
         os.getenv("GEMINI_API_KEY")
         or os.getenv("GOOGLE_API_KEY")
