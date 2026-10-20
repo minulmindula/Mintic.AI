@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -166,7 +166,12 @@ def risk_manager_node(
         SystemMessage(
             content=(
                 "You are the Chief Risk Officer. Review the analyst report, bullish thesis, "
-                "and bearish thesis to issue a final, highly disciplined TradeProposal in structured JSON format."
+                "and bearish thesis to issue a final, highly disciplined TradeProposal in structured JSON format. "
+                "Critically evaluate whether the bull thesis or bear thesis is stronger: "
+                "- Set action to 'BUY' if upside indicators and catalysts outweigh risks. "
+                "- Set action to 'SELL' if resistance levels or bearish risks dominate. "
+                "Calculate a dynamic confidence_score strictly between 0.70 and 0.98 reflecting signal clarity and risk weighting. "
+                "Do NOT default to static numbers or 'BUY' alone; compute a realistic, distinct action and confidence score."
             )
         ),
         HumanMessage(
@@ -180,5 +185,5 @@ def risk_manager_node(
             )
         ),
     ]
-    proposal: TradeProposal = structured_llm.invoke(messages)
+    proposal = cast(TradeProposal, structured_llm.invoke(messages))
     return {"final_proposal": proposal}

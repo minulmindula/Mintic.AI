@@ -38,3 +38,7 @@ build-backend = "uv_build"
 pythonpath = "."
 testpaths = ["tests"]
 
+[tool.pyright]
+extraPaths = ["."]
+
+
