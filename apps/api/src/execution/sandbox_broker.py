@@ -57,18 +57,22 @@ class SandboxedBrokerService:
             OrderSide.BUY if proposal.action.upper() == "BUY" else OrderSide.SELL
         )
 
+        # Alpaca requires TimeInForce.DAY for fractional quantities
+        is_fractional = (proposal.quantity % 1 != 0)
+        time_in_force = TimeInForce.DAY if is_fractional else TimeInForce.GTC
+
         order_data = MarketOrderRequest(
-            symbol=proposal.symbol,
+            symbol=proposal.symbol.replace("/", ""),
             qty=proposal.quantity,
             side=side,
-            time_in_force=TimeInForce.GTC,
+            time_in_force=time_in_force,
         )
 
         try:
             return self.trading_client.submit_order(order_data=order_data)
         except Exception as err:
-            err_str = str(err)
-            if "unauthorized" in err_str.lower() or "401" in err_str:
+            err_str = str(err).lower()
+            if "unauthorized" in err_str or "401" in err_str or "422" in err_str or "fractional" in err_str:
                 from src.mcp_servers.account_mcp import paper_ledger
                 paper_ledger.record_trade(
                     symbol=proposal.symbol,

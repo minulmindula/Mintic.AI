@@ -11,6 +11,8 @@ import {
   BarChart2,
   DollarSign,
   Maximize2,
+  Compass,
+  Newspaper,
 } from "lucide-react";
 import {
   AreaChart,
@@ -23,18 +25,35 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { MarketHistoryResponse } from "../../../../packages/shared-types";
+import {
+  MarketHistoryResponse,
+  MarketQuoteResponse,
+} from "../../../../packages/shared-types";
 
 export default function ChartsPage() {
   const [symbol, setSymbol] = useState("AAPL");
   const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<MarketHistoryResponse | null>(null);
+  const [quote, setQuote] = useState<MarketQuoteResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMarketHistory(symbol, days);
+    fetchQuote(symbol);
   }, [symbol, days]);
+
+  const fetchQuote = async (targetSymbol: string) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/market/quote/${targetSymbol}`);
+      if (res.ok) {
+        const quoteRes: MarketQuoteResponse = await res.json();
+        setQuote(quoteRes);
+      }
+    } catch {
+      // Ignore quote errors
+    }
+  };
 
   const fetchMarketHistory = async (targetSymbol: string, targetDays: number) => {
     setLoading(true);
@@ -226,6 +245,93 @@ export default function ChartsPage() {
           </span>
         </div>
       </div>
+
+      {/* Multi-Day Prediction, Investment Verdict & Google News Banner */}
+      {quote && (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-8 shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <Compass className="w-5 h-5 text-indigo-400" />
+              <div>
+                <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  {symbol} Predictive Intelligence & Recommendation
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold">
+                    Google Finance & News
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Algorithmic multi-day price forecast and real-time news sentiment
+                </p>
+              </div>
+            </div>
+            {quote.investment_suggestion && (
+              <span
+                className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider self-start sm:self-auto ${
+                  quote.investment_suggestion.includes("INVEST") || quote.investment_suggestion.includes("BUY")
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                    : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                }`}
+              >
+                {quote.investment_suggestion.split("(")[0].trim()}
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold block mb-1">
+                24h High / Low Range
+              </span>
+              <div className="text-xs font-mono text-slate-200">
+                <span className="text-rose-400 font-bold">£{(quote.low_24h ?? lowestPrice).toFixed(2)}</span>
+                <span className="text-slate-500 mx-2">—</span>
+                <span className="text-emerald-400 font-bold">£{(quote.high_24h ?? highestPrice).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 sm:col-span-2">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold block mb-1 flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-blue-400" />
+                Multi-Day Rise / Fall Forecast
+              </span>
+              <p className="text-xs font-mono text-blue-300 leading-relaxed">
+                {quote.prediction || "Consolidation within expected trading channel."}
+              </p>
+            </div>
+          </div>
+
+          {quote.investment_suggestion && (
+            <div className="bg-slate-950/80 p-3 rounded-lg border border-slate-800/80 text-xs font-mono text-slate-200 flex items-start gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 shrink-0 mt-0.5">
+                Verdict:
+              </span>
+              <span className="font-semibold text-slate-100">
+                {quote.investment_suggestion}
+              </span>
+            </div>
+          )}
+
+          {quote.recent_news && quote.recent_news.length > 0 && (
+            <div className="pt-2 border-t border-slate-800/80 space-y-2">
+              <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                <Newspaper className="w-3.5 h-3.5 text-blue-400" />
+                Latest News Catalysts & Market Impact:
+              </span>
+              <div className="grid grid-cols-1 gap-1.5">
+                {quote.recent_news.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="text-xs bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-slate-300 font-mono leading-relaxed flex items-start gap-2"
+                  >
+                    <span className="text-slate-500 text-[10px] mt-0.5">•</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main Interactive Charts Container */}
       <div className="space-y-8">

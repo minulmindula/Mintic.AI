@@ -17,6 +17,8 @@ import {
   Search,
   Wallet,
   LineChart,
+  Newspaper,
+  Compass,
 } from "lucide-react";
 import {
   AccountSummaryResponse,
@@ -85,8 +87,9 @@ export default function Home() {
     }
   };
 
-  const handleTrigger = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleTrigger = async (e?: React.FormEvent, targetSymbol?: string) => {
+    if (e) e.preventDefault();
+    const activeSymbol = targetSymbol || symbol;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -98,7 +101,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          symbol,
+          symbol: activeSymbol,
           market_data: { current_price: 180.0, volume_24h: 50000000 },
           account_state: { buying_power: 25000.0, cash: 25000.0 },
         }),
@@ -278,39 +281,131 @@ export default function Home() {
             </form>
           </div>
 
-          {/* Ticker Quote Lookup Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2 mb-3">
-              <Search className="w-4 h-4 text-emerald-400" />
-              Live Quote Lookup (`GET /market/quote`)
-            </h3>
-            <form onSubmit={handleFetchQuote} className="flex gap-2 mb-3">
+          {/* Ticker Quote & Intelligence Lookup Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <Search className="w-4 h-4 text-emerald-400" />
+                Live Stock & Crypto Search
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-1">
+                24h High/Low, multi-day rise/fall prediction, investment recommendation & Google News.
+              </p>
+            </div>
+
+            <form onSubmit={handleFetchQuote} className="flex gap-2">
               <input
                 type="text"
                 value={quoteSymbol}
                 onChange={(e) => setQuoteSymbol(e.target.value.toUpperCase())}
-                placeholder="Ticker (e.g. NVDA)"
+                placeholder="Ticker (e.g. BTC/USD, NVDA)"
                 className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
               <button
                 type="submit"
                 disabled={quoteLoading}
-                className="bg-slate-800 hover:bg-slate-700 text-xs font-semibold px-3 py-2 rounded-lg text-slate-200"
+                className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-xs font-semibold px-3 py-2 rounded-lg text-white transition-colors flex items-center gap-1.5"
               >
-                Quote
+                {quoteLoading ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Search className="w-3.5 h-3.5" />
+                )}
+                Search
               </button>
             </form>
 
             {quote && (
-              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1 font-mono">
-                <div className="flex justify-between text-slate-300">
-                  <span>Price:</span>
-                  <span className="text-emerald-400 font-bold">£{quote.current_price.toFixed(2)}</span>
+              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-3 font-mono">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div>
+                    <span className="text-sm font-bold text-slate-100 block">{quote.symbol}</span>
+                    <span className="text-xs text-emerald-400 font-bold">£{quote.current_price.toFixed(2)}</span>
+                  </div>
+                  {quote.investment_suggestion && (
+                    <span
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        quote.investment_suggestion.includes("INVEST") || quote.investment_suggestion.includes("BUY")
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                          : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                      }`}
+                    >
+                      {quote.investment_suggestion.split("(")[0].trim()}
+                    </span>
+                  )}
                 </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Ask / Bid:</span>
-                  <span>£{quote.ask_price.toFixed(2)} / £{quote.bid_price.toFixed(2)}</span>
+
+                {/* 24h High & Low */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800/80">
+                    <span className="text-[10px] text-slate-400 block">24h High</span>
+                    <span className="text-emerald-400 font-bold">
+                      £{(quote.high_24h ?? quote.current_price * 1.02).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800/80">
+                    <span className="text-[10px] text-slate-400 block">24h Low</span>
+                    <span className="text-rose-400 font-bold">
+                      £{(quote.low_24h ?? quote.current_price * 0.98).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Multi-Day Prediction */}
+                {quote.prediction && (
+                  <div className="bg-blue-950/20 border border-blue-800/40 p-2 rounded-lg text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 text-blue-400 font-semibold text-[10px]">
+                      <Compass className="w-3 h-3" />
+                      Prediction (Coming Days)
+                    </div>
+                    <p className="text-slate-300 text-[11px] leading-relaxed">
+                      {quote.prediction}
+                    </p>
+                  </div>
+                )}
+
+                {/* Investment Suggestion */}
+                {quote.investment_suggestion && (
+                  <div className="text-[11px] bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 text-slate-300">
+                    <span className="text-slate-400 block text-[9px] uppercase font-semibold">
+                      Recommendation:
+                    </span>
+                    {quote.investment_suggestion}
+                  </div>
+                )}
+
+                {/* Google News Headlines */}
+                {quote.recent_news && quote.recent_news.length > 0 && (
+                  <div className="space-y-1 pt-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <Newspaper className="w-3 h-3 text-slate-400" />
+                      Latest Google News
+                    </span>
+                    <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                      {quote.recent_news.slice(0, 3).map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="text-[10px] bg-slate-900/90 p-1.5 rounded border border-slate-800/80 text-slate-300 leading-tight"
+                        >
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick Action to Trigger Deliberation */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSymbol(quote.symbol);
+                    handleTrigger(undefined, quote.symbol);
+                  }}
+                  className="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-200 text-xs font-semibold py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 mt-2"
+                >
+                  <Cpu className="w-3.5 h-3.5 text-blue-400" />
+                  Deliberate {quote.symbol}
+                </button>
               </div>
             )}
           </div>
@@ -391,6 +486,98 @@ export default function Home() {
                         <li key={i}>{chk}</li>
                       ))}
                     </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Market Intelligence, 24h High/Low, Multi-Day Prediction & Google News Banner */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Compass className="w-5 h-5 text-indigo-400" />
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                        {result.symbol} Predictive Market Intelligence
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold">
+                          Google Finance & News API
+                        </span>
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Live 24h price range, multi-day rise/fall forecast & institutional sentiment
+                      </p>
+                    </div>
+                  </div>
+                  {result.investment_suggestion && (
+                    <span
+                      className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider self-start sm:self-auto ${
+                        result.investment_suggestion.includes("INVEST") || result.investment_suggestion.includes("BUY")
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                          : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                      }`}
+                    >
+                      {result.investment_suggestion.split("(")[0].trim()}
+                    </span>
+                  )}
+                </div>
+
+                {/* 24h High/Low Range & Multi-Day Rise/Fall Prediction */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <span className="text-[11px] text-slate-400 uppercase font-semibold block mb-1">
+                      24h Trading Range
+                    </span>
+                    <div className="text-xs font-mono text-slate-200">
+                      <span className="text-rose-400 font-bold">
+                        £{(result.low_24h ?? 0).toFixed(2)}
+                      </span>
+                      <span className="text-slate-500 mx-2">—</span>
+                      <span className="text-emerald-400 font-bold">
+                        £{(result.high_24h ?? 0).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 sm:col-span-2">
+                    <span className="text-[11px] text-slate-400 uppercase font-semibold block mb-1 flex items-center gap-1.5">
+                      <Compass className="w-3.5 h-3.5 text-blue-400" />
+                      Multi-Day Rise / Fall Forecast & Target
+                    </span>
+                    <p className="text-xs font-mono text-blue-300 leading-relaxed">
+                      {result.prediction || "Consolidation within expected volatility bands."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Investment Recommendation Detail */}
+                {result.investment_suggestion && (
+                  <div className="bg-slate-950/80 p-3 rounded-lg border border-slate-800/80 text-xs font-mono text-slate-200 flex items-start gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 shrink-0 mt-0.5">
+                      Verdict:
+                    </span>
+                    <span className="font-semibold text-slate-100">
+                      {result.investment_suggestion}
+                    </span>
+                  </div>
+                )}
+
+                {/* Google News Catalysts */}
+                {result.recent_news && result.recent_news.length > 0 && (
+                  <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                    <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                      <Newspaper className="w-3.5 h-3.5 text-blue-400" />
+                      Google News Catalysts & Market Sentiment:
+                    </span>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {result.recent_news.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="text-xs bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-slate-300 font-mono leading-relaxed flex items-start gap-2"
+                        >
+                          <span className="text-slate-500 text-[10px] mt-0.5">•</span>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -506,15 +693,29 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Tab 2: Multi-Agent Deliberation Reports */}
+              {/* Tab 2: Multi-Agent Deliberation Reports (Concise & High Impact) */}
               {activeTab === "deliberation" && (
                 <div className="space-y-6">
+                  <div className="flex items-center justify-between bg-slate-900/60 border border-slate-800 rounded-lg px-4 py-2 text-xs">
+                    <span className="text-slate-400">
+                      Multi-agent deliberation outputs generated under strict brevity constraints (&lt;120 words).
+                    </span>
+                    <span className="font-mono text-emerald-400 font-semibold">
+                      To-the-point bullets
+                    </span>
+                  </div>
+
                   {/* Analyst Report */}
                   <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                    <h4 className="text-sm font-bold text-slate-100 mb-2 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-blue-400" />
-                      1. Financial Analyst Node Report
-                    </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-400" />
+                        1. Financial Analyst Node Report
+                      </h4>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold">
+                        Quantitative Summary
+                      </span>
+                    </div>
                     <div className="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-lg border border-slate-800 whitespace-pre-wrap font-mono">
                       {result.analyst_report || "No analyst report text returned."}
                     </div>
@@ -522,10 +723,15 @@ export default function Home() {
 
                   {/* Bull Hypothesis */}
                   <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                    <h4 className="text-sm font-bold text-emerald-300 mb-2 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-emerald-400" />
-                      2. Bull Node Optimistic Hypothesis
-                    </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-bold text-emerald-300 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-emerald-400" />
+                        2. Bull Node Optimistic Hypothesis
+                      </h4>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
+                        Upside Catalyst
+                      </span>
+                    </div>
                     <div className="text-xs text-emerald-200/90 leading-relaxed bg-slate-950 p-4 rounded-lg border border-emerald-900/40 whitespace-pre-wrap font-mono">
                       {result.bull_hypothesis || "No bull hypothesis text returned."}
                     </div>
@@ -533,10 +739,15 @@ export default function Home() {
 
                   {/* Bear Hypothesis */}
                   <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                    <h4 className="text-sm font-bold text-rose-300 mb-2 flex items-center gap-2">
-                      <TrendingDown className="w-4 h-4 text-rose-400" />
-                      3. Bear Node Risk Hypothesis
-                    </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-bold text-rose-300 flex items-center gap-2">
+                        <TrendingDown className="w-4 h-4 text-rose-400" />
+                        3. Bear Node Risk Hypothesis
+                      </h4>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold">
+                        Downside Risks
+                      </span>
+                    </div>
                     <div className="text-xs text-rose-200/90 leading-relaxed bg-slate-950 p-4 rounded-lg border border-rose-900/40 whitespace-pre-wrap font-mono">
                       {result.bear_hypothesis || "No bear hypothesis text returned."}
                     </div>

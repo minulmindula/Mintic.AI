@@ -46,6 +46,11 @@ export interface TriggerAnalysisResponse {
   analyst_report?: string;
   bull_hypothesis?: string;
   bear_hypothesis?: string;
+  high_24h?: number;
+  low_24h?: number;
+  prediction?: string;
+  investment_suggestion?: string;
+  recent_news?: string[];
 }
 
 export interface HealthResponse {
@@ -83,6 +88,11 @@ export interface MarketQuoteResponse {
   current_price: number;
   ask_price: number;
   bid_price: number;
+  high_24h?: number;
+  low_24h?: number;
+  prediction?: string;
+  investment_suggestion?: string;
+  recent_news?: string[];
 }
 
 export interface CandlePoint {
